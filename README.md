@@ -1,12 +1,12 @@
 # WiFi-PWN Toolkit v2.0
 
-> Built-in WiFi Adapter Payload-Based Password Recovery Toolkit
+> WiFi Adapter Payload-Based Password Recovery Toolkit (Internal & External)
 
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A comprehensive WiFi security assessment toolkit designed to extract saved WiFi passwords, capture PMKID hashes, perform WPA handshake captures, and crack passwords using hashcat — all from your machine's built-in/internal WiFi adapter. No external WiFi adapter required for many operations.
+A comprehensive WiFi security assessment toolkit designed to extract saved WiFi passwords, capture PMKID hashes, perform WPA handshake captures, and crack passwords using hashcat — works with both internal (built-in) and external WiFi adapters.
 
 ---
 

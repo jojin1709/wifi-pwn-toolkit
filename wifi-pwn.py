@@ -44,7 +44,7 @@ banner = f"""
    ╔══════════════════════════════════════════════════╗
    ║           WiFi-PWN Toolkit v2.0                  ║
    ║    Payload-Based WiFi Password Recovery          ║
-   ║    {W}[ Built-in WiFi Adapter ]{C}                     ║
+   ║    {W}[ Internal & External Adapters ]{C}            ║
    ╚══════════════════════════════════════════════════╝
 {N}"""
 
@@ -779,7 +779,7 @@ def main():
             pass
     
     parser = argparse.ArgumentParser(
-        description="WiFi-PWN Toolkit v2.0 — Payload-Based WiFi Password Recovery (Built-in Adapter)",
+        description="WiFi-PWN Toolkit v2.0 — Payload-Based WiFi Password Recovery (Internal & External Adapters)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
