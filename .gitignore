@@ -13,8 +13,11 @@ wifi-pwn-output/
 *.22000
 *.essid
 *.potfile
-*.txt
 *.log
+
+# Wordlists (keep bundled ones, ignore downloaded ones)
+wordlists/*.txt
+!wordlists/common-wifi-passwords.txt
 
 # Virtual environment
 venv/

@@ -114,6 +114,60 @@ def signal_handler(sig, frame):
     STOP_FLAG = True
     print(f"\n{Y}[!] Interrupted! Cleaning up...{N}")
 
+def install_missing_tools():
+    if IS_WINDOWS:
+        return
+    
+    needed = {
+        "hcxdumptool": "hcxdumptool",
+        "hcxpcapngtool": "hcxtools",
+        "hashcat": "hashcat",
+        "airodump-ng": "aircrack-ng",
+        "aireplay-ng": "aircrack-ng",
+        "airmon-ng": "aircrack-ng",
+        "iw": "iw",
+        "ethtool": "ethtool",
+    }
+    
+    if not IS_LINUX:
+        return
+    
+    missing = []
+    for tool, pkg in needed.items():
+        if not check_tool(tool):
+            if pkg not in missing:
+                missing.append(pkg)
+    
+    if not missing:
+        return
+    
+    print()
+    log("Missing tools detected:", "warn")
+    for m in missing:
+        log(f"  - {m}", "warn")
+    
+    try:
+        ans = input(f"{Y}[?] Install missing tools via apt? [Y/n]: {N}").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return
+    
+    if ans in ("", "y", "yes"):
+        log("Updating package list...", "info")
+        code, out, err = run_cmd(["sudo", "apt-get", "update"], timeout=120)
+        if code != 0:
+            log("apt-get update failed. Try manually: sudo apt-get update", "error")
+            return
+        
+        log(f"Installing: {' '.join(missing)}", "info")
+        code, out, err = run_cmd(["sudo", "apt-get", "install", "-y"] + missing, timeout=300)
+        if code == 0:
+            log("Tools installed successfully!", "ok")
+        else:
+            log(f"Installation failed: {err}", "error")
+    else:
+        log("Skipping installation.", "info")
+
 signal.signal(signal.SIGINT, signal_handler)
 
 def ensure_dir(path):
@@ -379,6 +433,7 @@ def crack_hashcat(hash_file, wordlist=None, mask=None, rules=None, timeout=300):
     
     if not wordlist:
         candidates = [
+            str(SCRIPT_DIR / "wordlists" / "common-wifi-passwords.txt"),
             "/usr/share/wordlists/rockyou.txt",
             "/usr/share/wordlists/rockyou.txt.gz",
             "/usr/share/wordlists/realhuman_phill.txt"
@@ -770,6 +825,9 @@ Examples:
         else:
             log("Run with: sudo python3 wifi-pwn.py ...", "error")
         sys.exit(1)
+    
+    if IS_LINUX and not args.no_admin:
+        install_missing_tools()
     
     cmd = args.command.lower()
     
