@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Output / Capture files
+wifi-pwn-output/
+*.pcapng
+*.cap
+*.pcap
+*.22000
+*.essid
+*.potfile
+*.txt
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
