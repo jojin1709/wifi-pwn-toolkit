@@ -18,6 +18,8 @@ A comprehensive WiFi security assessment toolkit designed to extract saved WiFi 
 | PMKID Capture | Capture PMKID hashes from nearby access points |
 | WPA Handshake Capture | Capture WPA 4-way handshakes via monitor mode |
 | Deauth Attacks | Send deauthentication packets to force reconnections |
+| WPS Attack | WPS PIN brute-force and Pixie-Dust attack via reaver |
+| JSON Scan | Export scan results as JSON for scripts/automation |
 | Password Cracking | Crack captured hashes with hashcat + wordlists/masks |
 | Auto Scan | Scan nearby WiFi networks |
 | Capability Detection | Check what your internal WiFi adapter supports |
@@ -166,7 +168,25 @@ python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --client 11:22:33:44:55:66 
 
 ---
 
-#### 6. Crack — Password Cracking
+#### 6. WPS Attack
+WPS PIN brute-force and Pixie-Dust attack using `reaver`. Targets routers with WPS enabled.
+
+```bash
+# Auto-scan for WPS-enabled networks and attack first target
+sudo python3 wifi-pwn.py wps
+
+# Target specific BSSID
+sudo python3 wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --channel 6
+
+# Fast Pixie-Dust attack (bruteforces WPS PIN offline)
+sudo python3 wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --pixie
+```
+
+**Note:** WPS attacks require a monitor-mode interface. If the router has WPS lockout enabled, the attack may fail.
+
+---
+
+#### 7. Crack — Password Cracking
 Crack captured hashes using hashcat with wordlists or mask attacks.
 
 ```bash
@@ -185,7 +205,7 @@ python3 wifi-pwn.py crack --input capture.cap --wordlist rockyou.txt
 
 ---
 
-#### 7. Full Auto Mode
+#### 8. Full Auto Mode
 End-to-end automated workflow: recon → PMKID capture → crack.
 
 ```bash
@@ -211,14 +231,16 @@ python3 wifi-pwn.py detect
 |---|---|---|
 | `--bssid` | Target BSSID (MAC address) | — |
 | `--channel` | Target channel number | — |
-| `--timeout` | Capture timeout (seconds) | 60 |
+| `--timeout` | Capture timeout (seconds) | 3600 |
 | `--interface` | Wireless interface name | auto-detect |
 | `--input` | Input hash/capture file for cracking | — |
-| `--wordlist` | Path to wordlist file | auto-detect |
+| `--wordlist` | Path to wordlist file | bundled rockyou.txt |
 | `--mask` | Hashcat mask (e.g. `?d?d?d?d?d?d?d?d`) | — |
 | `--rules` | Hashcat rules file path | — |
 | `--client` | Client MAC for targeted deauth | — |
 | `--count` | Number of deauth packets | 5 |
+| `--pixie` | Use Pixie-Dust attack for WPS (faster) | false |
+| `--json` | Output scan results as JSON | false |
 | `--output` | Custom output directory | `./wifi-pwn-output` |
 | `--no-admin` | Skip admin/root check | false |
 

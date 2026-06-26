@@ -142,8 +142,12 @@
       <p>Sends deauthentication frames via <code>aireplay-ng</code> to force client reconnections and trigger handshakes.</p>
     </div>
     <div class="feature">
+      <h4>WPS Attack</h4>
+      <p>WPS PIN brute-force and Pixie-Dust attacks via <code>reaver</code>. Targets routers with WPS enabled.</p>
+    </div>
+    <div class="feature">
       <h4>Password Cracking</h4>
-      <p>Crack PMKID or handshake hashes with <code>hashcat</code> (mode 22000). Supports dictionary, mask, and rule-based attacks.</p>
+      <p>Crack PMKID or handshake hashes with <code>hashcat</code> (mode 22000). Supports dictionary, mask, and rule-based attacks. Uses <code>--exit</code> to stop when password is found.</p>
     </div>
     <div class="feature">
       <h4>Bundled Wordlist</h4>
@@ -351,7 +355,7 @@ python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --iface wlan0mon --count 10
 python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --client 11:22:33:44:55:66 --iface wlan0mon --count 5</code></pre>
 
   <h3 id="crack">crack — Password Cracking</h3>
-  <p>Crack PMKID or handshake hashes using hashcat. Supports dictionary, mask, and rule attacks.</p>
+  <p>Crack PMKID or handshake hashes using hashcat. Supports dictionary, mask, and rule attacks. Uses <code>--exit</code> so it stops automatically when the password is found.</p>
   <pre><code># Dictionary attack (uses bundled rockyou.txt by default)
 python3 wifi-pwn.py crack --input hash.22000
 
@@ -367,6 +371,20 @@ python3 wifi-pwn.py crack --input hash.22000 --wordlist rockyou.txt --rules /usr
 # Auto-convert .cap files
 python3 wifi-pwn.py crack --input capture.cap</code></pre>
   <p><strong>Hashcat Mode:</strong> <code>22000</code> (WPA-PBKDF2-PMKID+PMK / WPA-PMKID+PMK / WPA-PMKID+PMK-replay)</p>
+
+  <h3 id="wps">wps — WPS PIN / Pixie-Dust Attack</h3>
+  <p>Attack routers with WPS enabled using `reaver`. Supports both online PIN brute-force and offline Pixie-Dust attacks.</p>
+  <pre><code># Auto-scan and attack first WPS-enabled network
+sudo python3 wifi-pwn.py wps
+
+# Target specific BSSID
+sudo python3 wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --channel 6
+
+# Fast Pixie-Dust attack (bruteforces WPS PIN offline)
+sudo python3 wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --pixie</code></pre>
+  <div class="warn-box">
+    <strong>WPS Lockout:</strong> Many routers have WPS lockout after 3-5 failed attempts. Pixie-Dust is much faster but only works on vulnerable chipset implementations.
+  </div>
 
   <h3 id="full">full — Automated End-to-End Mode</h3>
   <p>Runs the complete attack chain: recon → scan (optional) → PMKID capture → crack.</p>
@@ -390,7 +408,7 @@ python3 wifi-pwn.py crack --input capture.cap</code></pre>
     <tr><th>Option</th><th>Description</th><th>Default</th></tr>
     <tr><td><code>--bssid</code></td><td>Target BSSID (MAC address)</td><td>—</td></tr>
     <tr><td><code>--channel</code></td><td>Target channel number</td><td>—</td></tr>
-    <tr><td><code>--timeout</code></td><td>Capture timeout (seconds)</td><td>60</td></tr>
+    <tr><td><code>--timeout</code></td><td>Capture / cracking timeout (seconds)</td><td>3600</td></tr>
     <tr><td><code>--interface</code></td><td>Wireless interface name</td><td>auto-detect</td></tr>
     <tr><td><code>--input</code></td><td>Input hash/capture file for cracking</td><td>—</td></tr>
     <tr><td><code>--wordlist</code></td><td>Path to wordlist file</td><td>bundled rockyou.txt</td></tr>
@@ -398,6 +416,8 @@ python3 wifi-pwn.py crack --input capture.cap</code></pre>
     <tr><td><code>--rules</code></td><td>Hashcat rules file path</td><td>—</td></tr>
     <tr><td><code>--client</code></td><td>Client MAC for targeted deauth</td><td>—</td></tr>
     <tr><td><code>--count</code></td><td>Number of deauth packets to send</td><td>5</td></tr>
+    <tr><td><code>--pixie</code></td><td>Use Pixie-Dust attack for WPS (faster)</td><td>false</td></tr>
+    <tr><td><code>--json</code></td><td>Output scan results as JSON</td><td>false</td></tr>
     <tr><td><code>--output</code></td><td>Custom output directory</td><td>./wifi-pwn-output</td></tr>
     <tr><td><code>--no-admin</code></td><td>Skip admin/root check</td><td>false</td></tr>
   </table>
@@ -413,6 +433,11 @@ python3 wifi-pwn.py crack --input capture.cap</code></pre>
 
   <p><strong>Using custom wordlists:</strong></p>
   <pre><code>python3 wifi-pwn.py crack --input hash.22000 --wordlist /usr/share/wordlists/realhuman_phill.txt</code></pre>
+
+  <div class="card">
+    <h4>Auto-Download Wordlists</h4>
+    <p>If the bundled <code>rockyou.txt</code> is missing or corrupted, the toolkit will <strong>automatically try to download it</strong> from GitHub (using <code>curl</code> or Python <code>urllib</code>). No manual intervention required.</p>
+  </div>
 
   <h2 id="auto-install">Auto-Install Missing Tools</h2>
   <p>On Linux, the toolkit automatically checks for required tools at startup. If any are missing, you'll see a prompt:</p>
@@ -431,6 +456,8 @@ python3 wifi-pwn.py crack --input capture.cap</code></pre>
     <tr><td><code>airodump-ng</code></td><td><code>aircrack-ng</code></td><td>Handshake capture</td></tr>
     <tr><td><code>aireplay-ng</code></td><td><code>aircrack-ng</code></td><td>Deauth attacks</td></tr>
     <tr><td><code>airmon-ng</code></td><td><code>aircrack-ng</code></td><td>Monitor mode management</td></tr>
+    <tr><td><code>reaver</code></td><td><code>reaver</code></td><td>WPS PIN / Pixie-Dust attacks</td></tr>
+    <tr><td><code>wash</code></td><td><code>reaver</code></td><td>WPS-enabled network scanner</td></tr>
     <tr><td><code>iw</code></td><td><code>iw</code></td><td>Wireless interface management</td></tr>
     <tr><td><code>ethtool</code></td><td><code>ethtool</code></td><td>Adapter driver information</td></tr>
   </table>
@@ -480,6 +507,16 @@ wordlists/
   <div class="card">
     <h4>Slow cracking speed</h4>
     <p>Use <code>--mask</code> for targeted attacks instead of full dictionary. Ensure your GPU drivers are installed for hashcat. CPU-only cracking is very slow for large wordlists.</p>
+  </div>
+
+  <div class="card">
+    <h4>WPS attack fails / lockout</h4>
+    <p>Routers with WPS lockout will block you after 3-5 failed PIN attempts. Wait 10-15 minutes before retrying. Pixie-Dust (<code>--pixie</code>) is faster but only works on vulnerable chipsets (Realtek, Broadcom, etc.).</p>
+  </div>
+
+  <div class="card">
+    <h4>"Not supported on Windows" error</h4>
+    <p>Commands <code>pmkid</code>, <code>capture</code>, <code>deauth</code>, <code>wps</code>, and <code>full</code> require Linux tools. Use <strong>Kali Linux</strong> or a Linux VM/USB live environment with a compatible wireless adapter.</p>
   </div>
 
   <h2 id="developer">👨‍💻 Developer</h2>

@@ -5,6 +5,11 @@ __pycache__/
 *.so
 .Python
 
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Output / Capture files
 wifi-pwn-output/
 *.pcapng

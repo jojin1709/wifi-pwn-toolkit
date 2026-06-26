@@ -1,0 +1,5 @@
+# WiFi-PWN Toolkit dependencies
+# Note: System tools (hcxdumptool, hashcat, aircrack-ng, etc.) are installed via apt/brew
+
+# Testing dependencies
+pytest>=7.0.0
