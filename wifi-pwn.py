@@ -717,6 +717,12 @@ def detect_capabilities():
 def main():
     global OUTPUT_DIR
     
+    if IS_WINDOWS:
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+    
     parser = argparse.ArgumentParser(
         description="WiFi-PWN Toolkit v2.0 — Payload-Based WiFi Password Recovery (Built-in Adapter)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
