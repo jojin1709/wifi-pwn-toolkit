@@ -49,7 +49,7 @@ sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/wifi-pwn.git
+git clone https://github.com/<jojin1709 >/wifi-pwn.git
 cd wifi-pwn
 
 # Verify installation

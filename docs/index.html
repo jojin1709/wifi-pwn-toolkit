@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi-PWN Toolkit v2.0 — Documentation</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --bg2: #1a1a23;
+    --bg3: #22222e;
+    --text: #d4d4d8;
+    --text2: #a1a1aa;
+    --cyan: #22d3ee;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --purple: #a78bfa;
+    --border: #2e2e3a;
+    --code: #0d0d12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+  }
+  .container { display: flex; max-width: 1400px; margin: 0 auto; }
+  aside {
+    width: 280px; min-width: 280px; background: var(--bg2);
+    border-right: 1px solid var(--border); padding: 2rem 1rem;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  aside h2 { font-size: 1.1rem; color: var(--cyan); margin: 1.5rem 0 0.5rem; }
+  aside h2:first-child { margin-top: 0; }
+  aside a {
+    display: block; color: var(--text2); text-decoration: none;
+    padding: 0.4rem 0; font-size: 0.95rem; border-left: 2px solid transparent;
+    padding-left: 0.8rem; transition: all 0.2s;
+  }
+  aside a:hover { color: var(--cyan); border-left-color: var(--cyan); }
+  main { flex: 1; padding: 3rem 4rem; max-width: 900px; }
+  h1 { font-size: 2.8rem; margin: 0 0 0.5rem; background: linear-gradient(90deg, var(--cyan), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .tagline { color: var(--text2); font-size: 1.2rem; margin-bottom: 2rem; }
+  h2 { font-size: 1.8rem; margin-top: 3rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); color: var(--cyan); }
+  h3 { font-size: 1.3rem; margin-top: 2rem; color: var(--purple); }
+  p { color: var(--text2); }
+  code { background: var(--code); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 0.9em; color: var(--yellow); }
+  pre { background: var(--code); padding: 1.2rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); }
+  pre code { background: none; padding: 0; color: var(--text); font-size: 0.9rem; }
+  .cmd { color: var(--green); }
+  .opt { color: var(--purple); }
+  .arg { color: var(--yellow); }
+  table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+  th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--cyan); font-weight: 600; }
+  td { color: var(--text2); }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+  .card h4 { margin: 0 0 0.5rem; color: var(--cyan); }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+  .badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .badge-warn { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .warn-box { background: rgba(248, 113, 113, 0.1); border-left: 4px solid var(--red); padding: 1rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+  .warn-box strong { color: var(--red); }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .feature { background: var(--bg2); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--border); }
+  .feature h4 { margin: 0 0 0.5rem; color: var(--purple); }
+  .feature p { margin: 0; font-size: 0.9rem; }
+  .phase { display: flex; gap: 1rem; margin: 1rem 0; align-items: flex-start; }
+  .phase-num { background: var(--cyan); color: var(--bg); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .phase-content { background: var(--bg2); padding: 1rem 1.2rem; border-radius: 8px; border: 1px solid var(--border); flex: 1; }
+  .phase-content h4 { margin: 0 0 0.3rem; color: var(--cyan); }
+  .phase-content p { margin: 0; }
+  .nav-top { display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0.8rem 1.5rem; z-index: 100; }
+  .nav-top button { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; }
+  @media (max-width: 900px) {
+    .container { flex-direction: column; }
+    aside { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .nav-top { display: flex; justify-content: space-between; align-items: center; }
+    main { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav-top">
+  <strong style="color: var(--cyan)">WiFi-PWN Toolkit</strong>
+  <button onclick="document.querySelector('aside').classList.toggle('open')">Menu</button>
+</div>
+
+<div class="container">
+<aside>
+  <h2>Getting Started</h2>
+  <a href="#introduction">Introduction</a>
+  <a href="#features">Features</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#requirements">Requirements</a>
+  <a href="#installation">Installation</a>
+  <a href="#quick-start">Quick Start</a>
+
+  <h2>Commands</h2>
+  <a href="#recon">recon — Saved Passwords</a>
+  <a href="#scan">scan — Nearby Networks</a>
+  <a href="#pmkid">pmkid — Capture PMKID</a>
+  <a href="#capture">capture — Handshake</a>
+  <a href="#deauth">deauth — Deauth Attack</a>
+  <a href="#crack">crack — Password Cracking</a>
+  <a href="#full">full — Auto Mode</a>
+  <a href="#detect">detect — Capabilities</a>
+
+  <h2>Advanced</h2>
+  <a href="#wordlists">Wordlists</a>
+  <a href="#auto-install">Auto-Install Tools</a>
+  <a href="#output">Output Structure</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#disclaimer">Legal Disclaimer</a>
+</aside>
+
+<main>
+  <h1>WiFi-PWN Toolkit</h1>
+  <p class="tagline">Payload-Based WiFi Password Recovery — v2.0<br>Works with Internal & External WiFi Adapters</p>
+
+  <a href="https://github.com/jojin1709/wifi-pwn-toolkit" style="color: var(--cyan);">→ View on GitHub</a>
+
+  <h2 id="introduction">Introduction</h2>
+  <p>WiFi-PWN Toolkit is a comprehensive, offensive WiFi security assessment framework built in Python. It automates the full attack lifecycle — from reconnaissance to password recovery — using built-in or external WiFi adapters.</p>
+  <p>Designed for penetration testers and security researchers, it supports both <strong>Windows</strong> and <strong>Linux</strong>, and automatically installs missing dependencies on Linux.</p>
+
+  <h2 id="features">Features</h2>
+  <div class="features">
+    <div class="feature">
+      <h4>Saved Password Extraction</h4>
+      <p>Extracts all saved WiFi passwords from Windows (netsh) or Linux (NetworkManager / wpa_supplicant). No capture needed.</p>
+    </div>
+    <div class="feature">
+      <h4>PMKID Capture</h4>
+      <p>Captures PMKID hashes directly from APs using <code>hcxdumptool</code>. Works on most internal WiFi adapters without monitor mode.</p>
+    </div>
+    <div class="feature">
+      <h4>WPA Handshake Capture</h4>
+      <p>Classic 4-way handshake capture via <code>airodump-ng</code> in monitor mode. Requires an adapter that supports injection.</p>
+    </div>
+    <div class="feature">
+      <h4>Deauth Attacks</h4>
+      <p>Sends deauthentication frames via <code>aireplay-ng</code> to force client reconnections and trigger handshakes.</p>
+    </div>
+    <div class="feature">
+      <h4>Password Cracking</h4>
+      <p>Crack PMKID or handshake hashes with <code>hashcat</code> (mode 22000). Supports dictionary, mask, and rule-based attacks.</p>
+    </div>
+    <div class="feature">
+      <h4>Bundled Wordlist</h4>
+      <p>Includes <code>rockyou.txt</code> (14M+ passwords) so attacks work out-of-the-box. No downloads required.</p>
+    </div>
+    <div class="feature">
+      <h4>Auto-Install Tools</h4>
+      <p>On Linux, missing tools are detected automatically. The script prompts: <em>"Install missing tools via apt? [Y/n]"</em></p>
+    </div>
+    <div class="feature">
+      <h4>Auto Scan & Full Mode</h4>
+      <p><code>scan</code> lists nearby networks. <code>full</code> runs recon → capture → crack in one command.</p>
+    </div>
+  </div>
+
+  <h2 id="how-it-works">How It Works</h2>
+  <p>The toolkit follows a modular, phase-based attack methodology. Each phase is independent and can be run standalone or as part of the full automation chain.</p>
+
+  <div class="phase">
+    <div class="phase-num">1</div>
+    <div class="phase-content">
+      <h4>Reconnaissance (recon)</h4>
+      <p>Gathers intelligence locally by reading saved WiFi profiles from the operating system. On Windows, it queries <code>netsh wlan show profiles</code>. On Linux, it reads <code>/etc/NetworkManager/system-connections/</code> and <code>/etc/wpa_supplicant/</code>. This recovers plaintext passwords for previously connected networks instantly.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">2</div>
+    <div class="phase-content">
+      <h4>PMKID Capture (pmkid)</h4>
+      <p>Uses <code>hcxdumptool</code> to send association requests to nearby access points. If the AP supports PMKID (most modern routers do), it returns a PMKID hash. This is a <strong>client-less</strong> attack — no client needs to be connected. The hash is saved as a <code>.22000</code> file compatible with hashcat.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">3</div>
+    <div class="phase-content">
+      <h4>Handshake Capture (capture)</h4>
+      <p>Enables monitor mode using <code>airmon-ng</code>, then uses <code>airodump-ng</code> to listen for WPA 4-way handshakes. A handshake occurs whenever a client connects to the target AP. Optionally, a deauth attack can be sent first to force a reconnection.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">4</div>
+    <div class="phase-content">
+      <h4>Deauth Attack (deauth)</h4>
+      <p>Sends crafted 802.11 deauthentication frames to a specific client or broadcast. This forces the client to disconnect and reconnect, triggering a new WPA handshake that can then be captured.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">5</div>
+    <div class="phase-content">
+      <h4>Conversion (hcxpcapngtool)</h4>
+      <p>Raw capture files (<code>.pcapng</code> / <code>.cap</code>) are converted into hashcat format (<code>.22000</code>) using <code>hcxpcapngtool</code>. This extracts the PMKID or handshake hash into a crackable format.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">6</div>
+    <div class="phase-content">
+      <h4>Cracking (crack / full)</h4>
+      <p>Passes the <code>.22000</code> hash file to <code>hashcat</code> along with a wordlist. The toolkit includes <code>rockyou.txt</code> (14M+ real-world passwords) for immediate use. Supports dictionary attacks, mask attacks, and rule-based mangling.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-num">7</div>
+    <div class="phase-content">
+      <h4>Reporting</h4>
+      <p>All results — cracked passwords, SSIDs, BSSIDs, timestamps, and cracking speeds — are saved to <code>audit-report.txt</code> and <code>cracked-passwords.txt</code> automatically.</p>
+    </div>
+  </div>
+
+  <h2 id="requirements">Requirements</h2>
+
+  <h3>Linux (Recommended)</h3>
+  <ul>
+    <li>Python 3.8 or higher</li>
+    <li>Root / sudo privileges</li>
+    <li>Wireless adapter (internal or external) with monitor mode support</li>
+  </ul>
+  <p><strong>Dependencies:</strong> <code>aircrack-ng</code>, <code>hcxdumptool</code>, <code>hcxtools</code>, <code>hashcat</code>, <code>iw</code>, <code>ethtool</code></p>
+
+  <h3>Windows</h3>
+  <ul>
+    <li>Python 3.8 or higher</li>
+    <li>Administrator privileges</li>
+    <li>WiFi adapter (built-in or USB)</li>
+  </ul>
+  <p><strong>Note:</strong> On Windows, only recon, scan, and detect are natively supported. For PMKID/handshake capture, use a Linux environment or WSL2 with a compatible adapter.</p>
+
+  <h2 id="installation">Installation</h2>
+
+  <h3>Clone the Repository</h3>
+  <pre><code>git clone https://github.com/jojin1709/wifi-pwn-toolkit.git
+cd wifi-pwn-toolkit</code></pre>
+
+  <h3>Install Dependencies (Linux)</h3>
+  <pre><code>sudo apt-get update
+sudo apt-get install -y aircrack-ng hcxdumptool hcxtools hashcat python3 iw ethtool</code></pre>
+  <p>Or let the toolkit auto-install them — just run any command and press <code>Y</code> when prompted.</p>
+
+  <h3>Run</h3>
+  <pre><code># Linux
+sudo python3 wifi-pwn.py detect
+
+# Windows
+python wifi-pwn.py --no-admin detect</code></pre>
+
+  <h2 id="quick-start">Quick Start</h2>
+
+  <h3>1. Check Adapter Capabilities</h3>
+  <pre><code>sudo python3 wifi-pwn.py detect</code></pre>
+
+  <h3>2. Extract Saved WiFi Passwords</h3>
+  <pre><code>sudo python3 wifi-pwn.py recon</code></pre>
+
+  <h3>3. Scan Nearby Networks</h3>
+  <pre><code>sudo python3 wifi-pwn.py scan</code></pre>
+
+  <h3>4. Capture PMKID and Crack</h3>
+  <pre><code>sudo python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
+sudo python3 wifi-pwn.py crack --input wifi-pwn-output/pmkid-*.22000</code></pre>
+
+  <h3>5. Full Automation</h3>
+  <pre><code>sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120</code></pre>
+
+  <h2 id="commands">Command Reference</h2>
+
+  <h3 id="recon">recon — Extract Saved WiFi Passwords</h3>
+  <p>Recover plaintext WiFi passwords stored on the local machine. Works instantly without any wireless traffic.</p>
+  <pre><code>python3 wifi-pwn.py recon</code></pre>
+  <p><strong>OS sources:</strong></p>
+  <ul>
+    <li><strong>Windows:</strong> <code>netsh wlan show profiles</code> + <code>key=clear</code></li>
+    <li><strong>Linux:</strong> <code>/etc/NetworkManager/system-connections/</code>, <code>/etc/wpa_supplicant/wpa_supplicant.conf</code></li>
+  </ul>
+  <p><strong>Output:</strong> <code>wifi-pwn-output/saved-passwords.txt</code></p>
+
+  <h3 id="scan">scan — Scan Nearby Networks</h3>
+  <p>Lists all visible WiFi networks with SSID, BSSID, channel, signal strength, and encryption type.</p>
+  <pre><code>python3 wifi-pwn.py scan
+python3 wifi-pwn.py scan --interface wlan0</code></pre>
+
+  <h3 id="pmkid">pmkid — Capture PMKID Hash</h3>
+  <p>The PMKID attack is the most reliable method for internal/adapters. It requests a PMKID from the AP directly — no client traffic or monitor mode required.</p>
+  <pre><code>python3 wifi-pwn.py pmkid
+python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120</code></pre>
+  <div class="card">
+    <h4>How PMKID Works</h4>
+    <p>When a client requests association, the AP includes a PMKID (Pairwise Master Key ID) in its response. This PMKID is derived from the AP's PMK (which is the same as the WiFi password). If we capture it, hashcat can crack it offline.</p>
+  </div>
+  <p><strong>Output:</strong> <code>.pcapng</code> capture → <code>.22000</code> hash file</p>
+
+  <h3 id="capture">capture — WPA Handshake Capture</h3>
+  <p>Captures the classic WPA 4-way handshake. Requires monitor mode and an adapter that supports packet injection.</p>
+  <pre><code>python3 wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6
+python3 wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6 --timeout 180</code></pre>
+  <p><strong>Requirements:</strong> Monitor mode (<code>airmon-ng</code>), injection-capable adapter</p>
+  <p><strong>Tip:</strong> If monitor mode fails, use <code>pmkid</code> instead — it works on more adapters.</p>
+
+  <h3 id="deauth">deauth — Deauthentication Attack</h3>
+  <p>Sends deauth frames to disconnect a client or the entire network. Often used before <code>capture</code> to force a handshake.</p>
+  <pre><code># Broadcast deauth (disconnects all clients)
+python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --iface wlan0mon --count 10
+
+# Targeted deauth (specific client)
+python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --client 11:22:33:44:55:66 --iface wlan0mon --count 5</code></pre>
+
+  <h3 id="crack">crack — Password Cracking</h3>
+  <p>Crack PMKID or handshake hashes using hashcat. Supports dictionary, mask, and rule attacks.</p>
+  <pre><code># Dictionary attack (uses bundled rockyou.txt by default)
+python3 wifi-pwn.py crack --input hash.22000
+
+# Custom wordlist
+python3 wifi-pwn.py crack --input hash.22000 --wordlist /path/to/wordlist.txt
+
+# Mask attack (e.g. 8-digit numeric PIN)
+python3 wifi-pwn.py crack --input hash.22000 --mask "?d?d?d?d?d?d?d?d"
+
+# With rules for mangling
+python3 wifi-pwn.py crack --input hash.22000 --wordlist rockyou.txt --rules /usr/share/hashcat/rules/best64.rule
+
+# Auto-convert .cap files
+python3 wifi-pwn.py crack --input capture.cap</code></pre>
+  <p><strong>Hashcat Mode:</strong> <code>22000</code> (WPA-PBKDF2-PMKID+PMK / WPA-PMKID+PMK / WPA-PMKID+PMK-replay)</p>
+
+  <h3 id="full">full — Automated End-to-End Mode</h3>
+  <p>Runs the complete attack chain: recon → scan (optional) → PMKID capture → crack.</p>
+  <pre><code>python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120</code></pre>
+  <p>If no BSSID is provided, it scans first and lists available targets.</p>
+
+  <h3 id="detect">detect — Check Adapter Capabilities</h3>
+  <p>Diagnostic command that checks what your WiFi adapter supports before you attempt attacks.</p>
+  <pre><code>python3 wifi-pwn.py detect</code></pre>
+  <p><strong>Reports:</strong></p>
+  <ul>
+    <li>Available wireless interfaces</li>
+    <li>Monitor mode support (via <code>iw</code>)</li>
+    <li>Driver information</li>
+    <li>PMKID capture feasibility</li>
+    <li>Installed tool status</li>
+  </ul>
+
+  <h2 id="options">All Options</h2>
+  <table>
+    <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+    <tr><td><code>--bssid</code></td><td>Target BSSID (MAC address)</td><td>—</td></tr>
+    <tr><td><code>--channel</code></td><td>Target channel number</td><td>—</td></tr>
+    <tr><td><code>--timeout</code></td><td>Capture timeout (seconds)</td><td>60</td></tr>
+    <tr><td><code>--interface</code></td><td>Wireless interface name</td><td>auto-detect</td></tr>
+    <tr><td><code>--input</code></td><td>Input hash/capture file for cracking</td><td>—</td></tr>
+    <tr><td><code>--wordlist</code></td><td>Path to wordlist file</td><td>bundled rockyou.txt</td></tr>
+    <tr><td><code>--mask</code></td><td>Hashcat mask (e.g. <code>?d?d?d?d?d?d?d?d</code>)</td><td>—</td></tr>
+    <tr><td><code>--rules</code></td><td>Hashcat rules file path</td><td>—</td></tr>
+    <tr><td><code>--client</code></td><td>Client MAC for targeted deauth</td><td>—</td></tr>
+    <tr><td><code>--count</code></td><td>Number of deauth packets to send</td><td>5</td></tr>
+    <tr><td><code>--output</code></td><td>Custom output directory</td><td>./wifi-pwn-output</td></tr>
+    <tr><td><code>--no-admin</code></td><td>Skip admin/root check</td><td>false</td></tr>
+  </table>
+
+  <h2 id="wordlists">Wordlists</h2>
+  <p>The toolkit bundles a comprehensive wordlist so you can start cracking immediately.</p>
+
+  <div class="card">
+    <h4>Bundled: rockyou.txt</h4>
+    <p><span class="badge badge-ok">Included</span> Size: ~133 MB &bull; Entries: 14,344,391 &nbsp;|&nbsp; Stored in <code>wordlists/rockyou.txt</code></p>
+    <p>The most famous real-world password list. Contains millions of passwords leaked from various breaches. Excellent coverage for default ISP passwords, user-created passwords, and common defaults.</p>
+  </div>
+
+  <p><strong>Using custom wordlists:</strong></p>
+  <pre><code>python3 wifi-pwn.py crack --input hash.22000 --wordlist /usr/share/wordlists/realhuman_phill.txt</code></pre>
+
+  <h2 id="auto-install">Auto-Install Missing Tools</h2>
+  <p>On Linux, the toolkit automatically checks for required tools at startup. If any are missing, you'll see a prompt:</p>
+  <pre><code>[!] Missing tools detected:
+      - hcxdumptool
+      - hashcat
+[?] Install missing tools via apt? [Y/n]:</code></pre>
+  <p>Press <code>Y</code> and the toolkit will run <code>sudo apt-get update && sudo apt-get install -y</code> for you.</p>
+
+  <h3>Tools Checked</h3>
+  <table>
+    <tr><th>Tool</th><th>Package</th><th>Purpose</th></tr>
+    <tr><td><code>hcxdumptool</code></td><td><code>hcxdumptool</code></td><td>PMKID / pcapng capture</td></tr>
+    <tr><td><code>hcxpcapngtool</code></td><td><code>hcxtools</code></td><td>Convert captures to hashcat format</td></tr>
+    <tr><td><code>hashcat</code></td><td><code>hashcat</code></td><td>Password cracking engine</td></tr>
+    <tr><td><code>airodump-ng</code></td><td><code>aircrack-ng</code></td><td>Handshake capture</td></tr>
+    <tr><td><code>aireplay-ng</code></td><td><code>aircrack-ng</code></td><td>Deauth attacks</td></tr>
+    <tr><td><code>airmon-ng</code></td><td><code>aircrack-ng</code></td><td>Monitor mode management</td></tr>
+    <tr><td><code>iw</code></td><td><code>iw</code></td><td>Wireless interface management</td></tr>
+    <tr><td><code>ethtool</code></td><td><code>ethtool</code></td><td>Adapter driver information</td></tr>
+  </table>
+
+  <h2 id="output">Output Structure</h2>
+  <p>All results are saved to <code>wifi-pwn-output/</code> (or your custom <code>--output</code> dir):</p>
+  <pre><code>wifi-pwn-output/
+├── audit-report.txt           # Full audit report with timestamps
+├── cracked-passwords.txt      # Cracked SSID:password pairs
+├── saved-passwords.txt        # Extracted saved WiFi passwords
+├── pmkid-capture-HHMMSS.pcapng
+├── pmkid-capture-HHMMSS.22000    # Hashcat-ready hash
+├── pmkid-capture-HHMMSS.essid
+├── handshake-HHMMSS.cap
+└── handshake-HHMMSS.22000
+
+wordlists/
+└── rockyou.txt                # 14M+ bundled passwords (133 MB)</code></pre>
+
+  <h2 id="troubleshooting">Troubleshooting</h2>
+
+  <div class="card">
+    <h4>"No wireless interfaces found"</h4>
+    <p>Run <code>iw dev</code> to check available interfaces. Your adapter may need additional drivers, or may not support monitor mode.</p>
+  </div>
+
+  <div class="card">
+    <h4>"Monitor mode failed"</h4>
+    <p>Switch to <code>pmkid</code> mode — it works on most internal adapters without monitor mode. Some virtual adapters (VMware, VirtualBox) do not support it.</p>
+  </div>
+
+  <div class="card">
+    <h4>"No PMKID captured"</h4>
+    <p>Ensure the AP is within range (< 20m clear line-of-sight recommended). Try a longer timeout (<code>--timeout 120</code>). Not all APs send PMKID — older or low-end routers may omit it.</p>
+  </div>
+
+  <div class="card">
+    <h4>"Permission denied"</h4>
+    <p><strong>Linux:</strong> Always run with <code>sudo</code>. <strong>Windows:</strong> Run Command Prompt or PowerShell as Administrator.</p>
+  </div>
+
+  <div class="card">
+    <h4>Hashcat "No hashes loaded"</h4>
+    <p>Ensure the <code>.22000</code> file is valid. Check its size — it should be at least 100 bytes. Re-run <code>hcxpcapngtool</code> conversion if needed.</p>
+  </div>
+
+  <div class="card">
+    <h4>Slow cracking speed</h4>
+    <p>Use <code>--mask</code> for targeted attacks instead of full dictionary. Ensure your GPU drivers are installed for hashcat. CPU-only cracking is very slow for large wordlists.</p>
+  </div>
+
+  <h2 id="disclaimer">Legal Disclaimer</h2>
+  <div class="warn-box">
+    <strong>FOR AUTHORIZED SECURITY ASSESSMENTS ONLY</strong>
+    <p>This tool is intended for educational purposes and authorized security testing only. You must have <strong>explicit written permission</strong> from the network owner before testing or auditing any network. Unauthorized access to computer networks is illegal and may result in criminal penalties.</p>
+    <p>The author is not responsible for any misuse or damage caused by this software. Use it responsibly and ethically.</p>
+  </div>
+
+  <h2 id="contributing">Contributing</h2>
+  <p>Contributions are welcome! Please feel free to submit a Pull Request on GitHub.</p>
+  <ol>
+    <li>Fork the repo</li>
+    <li>Create a feature branch: <code>git checkout -b feature/my-feature</code></li>
+    <li>Commit your changes: <code>git commit -m 'Add my feature'</code></li>
+    <li>Push to the branch: <code>git push origin feature/my-feature</code></li>
+    <li>Open a Pull Request</li>
+  </ol>
+
+  <p style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text2);">
+    <strong style="color: var(--cyan)">WiFi-PWN Toolkit v2.0</strong><br>
+    Built for security professionals and penetration testers. Use responsibly.<br>
+    <a href="https://github.com/jojin1709/wifi-pwn-toolkit" style="color: var(--purple)">github.com/jojin1709/wifi-pwn-toolkit</a>
+  </p>
+</main>
+</div>
+
+<script>
+  // Smooth scroll for sidebar links
+  document.querySelectorAll('aside a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Close mobile menu after click
+      if (window.innerWidth <= 900) {
+        document.querySelector('aside').classList.remove('open');
+      }
+    });
+  });
+</script>
+</body>
+</html>
