@@ -12,35 +12,38 @@ A comprehensive WiFi security assessment toolkit designed to extract saved WiFi 
 
 ## Features
 
-| Feature | Description |
-|---|---|
-| Saved Password Extraction | Extract all saved WiFi passwords from Windows/Linux |
-| PMKID Capture | Capture PMKID hashes from nearby access points |
-| WPA Handshake Capture | Capture WPA 4-way handshakes via monitor mode |
-| Deauth Attacks | Send deauthentication packets to force reconnections |
-| WPS Attack | WPS PIN brute-force and Pixie-Dust attack via reaver |
-| JSON Scan | Export scan results as JSON for scripts/automation |
-| Password Cracking | Crack captured hashes with hashcat + wordlists/masks |
-| Auto Scan | Scan nearby WiFi networks |
-| Capability Detection | Check what your internal WiFi adapter supports |
-| Full Auto Mode | One-command end-to-end: recon → capture → crack |
+| Feature                   | Description                                          |
+| ------------------------- | ---------------------------------------------------- |
+| Saved Password Extraction | Extract all saved WiFi passwords from Windows/Linux  |
+| PMKID Capture             | Capture PMKID hashes from nearby access points       |
+| WPA Handshake Capture     | Capture WPA 4-way handshakes via monitor mode        |
+| Deauth Attacks            | Send deauthentication packets to force reconnections |
+| WPS Attack                | WPS PIN brute-force and Pixie-Dust attack via reaver |
+| JSON Scan                 | Export scan results as JSON for scripts/automation   |
+| Password Cracking         | Crack captured hashes with hashcat + wordlists/masks |
+| Auto Scan                 | Scan nearby WiFi networks                            |
+| Capability Detection      | Check what your internal WiFi adapter supports       |
+| Full Auto Mode            | One-command end-to-end: recon → capture → crack      |
 
 ---
 
 ## Requirements
 
 ### Linux (Recommended)
+
 - Python 3.8+
 - Root/sudo privileges
 - Wireless adapter with monitor mode support
 
 **Install dependencies:**
+
 ```bash
 sudo apt update
-sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3
+sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3 iw ethtool
 ```
 
 ### Windows
+
 - Python 3.8+
 - Administrator privileges
 - Optional: [CommView for WiFi](https://www.tamos.com/products/commwifi/) for handshake capture
@@ -51,8 +54,8 @@ sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3
 
 ```bash
 # Clone the repository
-git clone https://github.com/<jojin1709 >/wifi-pwn.git
-cd wifi-pwn
+git clone https://github.com/jojin1709/wifi-pwn-toolkit.git
+cd wifi-pwn-toolkit
 
 # Verify installation
 python3 wifi-pwn.py detect
@@ -68,6 +71,7 @@ python wifi-pwn.py <command> [options]
 ```
 
 > **Platform-specific notes:**
+>
 > - **Windows:** Run as Administrator. Use `python` instead of `python3`.
 > - **Kali Linux:** Always run with `sudo`. Use `python3`.
 > - **Windows:** If Unicode/encoding issues occur, ensure your terminal uses UTF-8 (`chcp 65001`).
@@ -113,6 +117,7 @@ The toolkit includes **rockyou.txt** (14M+ real-world passwords, ~133 MB) in `wo
 ### Commands
 
 #### 1. Recon — Extract Saved WiFi Passwords
+
 Extracts all previously connected WiFi passwords from the local machine.
 
 ```bash
@@ -125,6 +130,7 @@ python3 wifi-pwn.py recon
 ---
 
 #### 2. Scan — Scan Nearby Networks
+
 Scans and lists nearby WiFi networks with SSID, BSSID, and channel info.
 
 ```bash
@@ -135,6 +141,7 @@ python3 wifi-pwn.py scan --interface wlan0
 ---
 
 #### 3. PMKID Capture
+
 Captures PMKID hashes from a target access point. Works on most internal WiFi adapters.
 
 ```bash
@@ -147,6 +154,7 @@ python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
 ---
 
 #### 4. Handshake Capture
+
 Captures WPA 4-way handshake via monitor mode. Requires monitor mode support.
 
 ```bash
@@ -159,6 +167,7 @@ python3 wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6 --timeout 180
 ---
 
 #### 5. Deauth Attack
+
 Sends deauthentication packets to disconnect a client or AP, forcing a reconnection for handshake capture.
 
 ```bash
@@ -169,6 +178,7 @@ python3 wifi-pwn.py deauth --bssid AA:BB:CC:DD:EE:FF --client 11:22:33:44:55:66 
 ---
 
 #### 6. WPS Attack
+
 WPS PIN brute-force and Pixie-Dust attack using `reaver`. Targets routers with WPS enabled.
 
 ```bash
@@ -187,6 +197,7 @@ sudo python3 wifi-pwn.py wps --bssid AA:BB:CC:DD:EE:FF --pixie
 ---
 
 #### 7. Crack — Password Cracking
+
 Crack captured hashes using hashcat with wordlists or mask attacks.
 
 ```bash
@@ -206,6 +217,7 @@ python3 wifi-pwn.py crack --input capture.cap --wordlist rockyou.txt
 ---
 
 #### 8. Full Auto Mode
+
 End-to-end automated workflow: recon → PMKID capture → crack.
 
 ```bash
@@ -217,6 +229,7 @@ Without BSSID, it will scan first, then prompt for target selection.
 ---
 
 #### 8. Detect Capabilities
+
 Check what your WiFi adapter supports before running attacks.
 
 ```bash
@@ -227,28 +240,29 @@ python3 wifi-pwn.py detect
 
 ## All Options
 
-| Option | Description | Default |
-|---|---|---|
-| `--bssid` | Target BSSID (MAC address) | — |
-| `--channel` | Target channel number | — |
-| `--timeout` | Capture timeout (seconds) | 3600 |
-| `--interface` | Wireless interface name | auto-detect |
-| `--input` | Input hash/capture file for cracking | — |
-| `--wordlist` | Path to wordlist file | bundled rockyou.txt |
-| `--mask` | Hashcat mask (e.g. `?d?d?d?d?d?d?d?d`) | — |
-| `--rules` | Hashcat rules file path | — |
-| `--client` | Client MAC for targeted deauth | — |
-| `--count` | Number of deauth packets | 5 |
-| `--pixie` | Use Pixie-Dust attack for WPS (faster) | false |
-| `--json` | Output scan results as JSON | false |
-| `--output` | Custom output directory | `./wifi-pwn-output` |
-| `--no-admin` | Skip admin/root check | false |
+| Option        | Description                            | Default             |
+| ------------- | -------------------------------------- | ------------------- |
+| `--bssid`     | Target BSSID (MAC address)             | —                   |
+| `--channel`   | Target channel number                  | —                   |
+| `--timeout`   | Capture timeout (seconds)              | 3600                |
+| `--interface` | Wireless interface name                | auto-detect         |
+| `--input`     | Input hash/capture file for cracking   | —                   |
+| `--wordlist`  | Path to wordlist file                  | bundled rockyou.txt |
+| `--mask`      | Hashcat mask (e.g. `?d?d?d?d?d?d?d?d`) | —                   |
+| `--rules`     | Hashcat rules file path                | —                   |
+| `--client`    | Client MAC for targeted deauth         | —                   |
+| `--count`     | Number of deauth packets               | 5                   |
+| `--pixie`     | Use Pixie-Dust attack for WPS (faster) | false               |
+| `--json`      | Output scan results as JSON            | false               |
+| `--output`    | Custom output directory                | `./wifi-pwn-output` |
+| `--no-admin`  | Skip admin/root check                  | false               |
 
 ---
 
 ## Workflow Examples
 
 ### Windows Example: Quick WiFi Password Extraction
+
 ```powershell
 # Open PowerShell as Administrator
 python wifi-pwn.py --no-admin recon
@@ -256,6 +270,7 @@ python wifi-pwn.py --no-admin scan
 ```
 
 ### Kali Linux Example: PMKID Capture and Crack
+
 ```bash
 # Step 1: Install everything (or let it auto-prompt)
 sudo apt update && sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat
@@ -271,12 +286,14 @@ sudo python3 wifi-pwn.py crack --input wifi-pwn-output/pmkid-*.22000
 ```
 
 ### Example 3: Full Automated Attack (Kali Linux)
+
 ```bash
 # One command to do everything (uses bundled wordlist)
 sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120
 ```
 
 ### Example 4: Check Adapter Capabilities
+
 ```bash
 # See what your card can do before attempting attacks
 # Windows:
@@ -290,15 +307,15 @@ sudo python3 wifi-pwn.py detect
 
 ## Supported Tools
 
-| Tool | Purpose | Install |
-|---|---|---|
-| `hcxdumptool` | PMKID/pcap capture | `sudo apt install hcxdumptool` |
-| `hcxpcapngtool` | Convert captures to hashcat format | `sudo apt install hcxtools` |
-| `hashcat` | Password cracking | `sudo apt install hashcat` |
+| Tool                | Purpose                                 | Install                        |
+| ------------------- | --------------------------------------- | ------------------------------ |
+| `hcxdumptool`       | PMKID/pcap capture                      | `sudo apt install hcxdumptool` |
+| `hcxpcapngtool`     | Convert captures to hashcat format      | `sudo apt install hcxtools`    |
+| `hashcat`           | Password cracking                       | `sudo apt install hashcat`     |
 | `aircrack-ng` suite | Monitor mode, deauth, handshake capture | `sudo apt install aircrack-ng` |
-| `airodump-ng` | Handshake capture | `sudo apt install aircrack-ng` |
-| `aireplay-ng` | Deauth attacks | `sudo apt install aircrack-ng` |
-| `iw` | Interface management | `sudo apt install iw` |
+| `airodump-ng`       | Handshake capture                       | `sudo apt install aircrack-ng` |
+| `aireplay-ng`       | Deauth attacks                          | `sudo apt install aircrack-ng` |
+| `iw`                | Interface management                    | `sudo apt install iw`          |
 
 ---
 
@@ -333,14 +350,14 @@ The author is not responsible for any misuse or damage caused by this software. 
 
 ## Troubleshooting
 
-| Issue | Solution |
-|---|---|
-| "No wireless interfaces found" | Check `iw dev` — your adapter may need drivers |
-| "Monitor mode failed" | Try PMKID capture instead (`pmkid` command) |
-| "Tools not found" | The script will auto-prompt to install missing tools on Linux |
-| "No wordlist found" | Bundled wordlist included at `wordlists/rockyou.txt` |
-| "PMKID not captured" | Try longer timeout, check if AP supports PMKID, move closer to AP |
-| "Permission denied" | Run with `sudo` on Linux or as Administrator on Windows |
+| Issue                          | Solution                                                          |
+| ------------------------------ | ----------------------------------------------------------------- |
+| "No wireless interfaces found" | Check `iw dev` — your adapter may need drivers                    |
+| "Monitor mode failed"          | Try PMKID capture instead (`pmkid` command)                       |
+| "Tools not found"              | The script will auto-prompt to install missing tools on Linux     |
+| "No wordlist found"            | Bundled wordlist included at `wordlists/rockyou.txt`              |
+| "PMKID not captured"           | Try longer timeout, check if AP supports PMKID, move closer to AP |
+| "Permission denied"            | Run with `sudo` on Linux or as Administrator on Windows           |
 
 ---
 
@@ -374,8 +391,8 @@ If this tool helped you, consider giving it a ⭐ on GitHub!
   <img src="https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin" alt="LinkedIn" />
 </a>
 
-<a href="https://www.buymeacoffee.com/jojin1709">
-  <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a thanks&emoji=🙂&slug=jojin1709&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" />
+<a href="https://www.buymeacoffee.com/jojin1709" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.buymeacoffee.com/button-api/?text=Support%20my%20work&emoji=🚀&slug=jojin1709&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Support my work">
 </a>
 
 <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="jojin1709" data-description="Support me on Buy me a coffee!" data-message="" data-color="#5F7FFF" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
