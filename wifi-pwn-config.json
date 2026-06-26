@@ -1,0 +1,8 @@
+{
+  "default_interface": null,
+  "default_wordlist": "wordlists/rockyou.txt",
+  "default_timeout": 3600,
+  "output_dir": "wifi-pwn-output",
+  "auto_install_tools": true,
+  "color_output": true
+}

@@ -34,9 +34,11 @@ BOLD = "\033[1m"
 
 IS_WINDOWS = platform.system().lower() == "windows"
 IS_LINUX = platform.system().lower() == "linux"
+IS_MACOS = platform.system().lower() == "darwin"
 IS_ADMIN = False
 SCRIPT_DIR = Path(__file__).parent.resolve()
 OUTPUT_DIR = SCRIPT_DIR / "wifi-pwn-output"
+CONFIG_FILE = SCRIPT_DIR / "wifi-pwn-config.json"
 STOP_FLAG = False
 
 banner = f"""
@@ -70,6 +72,12 @@ def check_admin():
             IS_ADMIN = result.returncode == 0
         except:
             IS_ADMIN = False
+    elif IS_MACOS:
+        try:
+            result = subprocess.run(["security", "authorization", "status"], capture_output=True, text=True, timeout=5)
+            IS_ADMIN = "allow" in result.stdout.lower() or result.returncode == 0
+        except:
+            IS_ADMIN = os.geteuid() == 0
     else:
         IS_ADMIN = os.geteuid() == 0
     return IS_ADMIN
@@ -171,6 +179,15 @@ def install_missing_tools():
         log("Skipping installation.", "info")
 
 signal.signal(signal.SIGINT, signal_handler)
+
+def load_config():
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 def ensure_dir(path):
     path.mkdir(parents=True, exist_ok=True)
@@ -289,6 +306,48 @@ def recon_linux():
             f.write(f"{ssid:30} : {pwd}\n")
     
     log(f"Found {len(results)} saved configs → {recon_file}", "ok")
+    return results
+
+def recon_macos():
+    log("Checking macOS saved WiFi configs...", "info")
+    results = []
+    pref_path = Path.home() / "Library" / "Preferences" / "SystemConfiguration" / "com.apple.airport.preferences.plist"
+    
+    if not pref_path.exists():
+        log("No saved WiFi preferences found.", "warn")
+        return results
+    
+    try:
+        import plistlib
+        with open(pref_path, "rb") as f:
+            prefs = plistlib.load(f)
+        
+        remember_networks = prefs.get("RememberedNetworks", [])
+        for net in remember_networks:
+            ssid = net.get("SSID_STR", "[Unknown]")
+            password = "[Access via Keychain]"
+            
+            try:
+                cmd = ["security", "find-generic-password", "-ga", ssid, "-w"]
+                code, out, err = run_cmd(cmd, timeout=10)
+                if code == 0 and out.strip():
+                    password = out.strip()
+            except Exception:
+                pass
+            
+            results.append((ssid, password))
+            print(f"  {G}{ssid:30}{N} : {C}{password}{N}")
+    except Exception as e:
+        log(f"Failed to read WiFi preferences: {e}", "error")
+    
+    recon_file = OUTPUT_DIR / "saved-passwords.txt"
+    with open(recon_file, "w") as f:
+        f.write(f"WiFi Saved Passwords — {datetime.now()}\n")
+        f.write(f"{'='*60}\n")
+        for ssid, pwd in results:
+            f.write(f"{ssid:30} : {pwd}\n")
+    
+    log(f"Found {len(results)} saved networks → {recon_file}", "ok")
     return results
 
 # ─── PHASE 2: PMKID Capture ───
@@ -960,6 +1019,20 @@ def detect_capabilities():
     log("Detecting WiFi adapter capabilities...", "info")
     print(f"{B}{'='*50}{N}")
     
+    if IS_MACOS:
+        log("Platform: macOS", "info")
+        code, out, err = run_cmd(["networksetup", "-listallhardwareports"], timeout=5)
+        if code == 0:
+            interfaces = re.findall(r"Device: (\w+)", out)
+            for iface in interfaces:
+                log(f"Network Interface: {iface}", "info")
+                code2, out2, _ = run_cmd(["networksetup", "-getairportpower", iface], timeout=5)
+                if code2 == 0:
+                    log(f"WiFi Status: {out2.strip()}", "info")
+        log("Recon (saved passwords): Works via Keychain (requires permission)", "ok")
+        log("Note: Advanced attacks require external adapter with Kismet/monitor mode", "info")
+        return
+    
     if IS_WINDOWS:
         code, out, err = run_cmd(["netsh", "wlan", "show", "wirelesscapabilities"])
         if code == 0:
@@ -1079,15 +1152,24 @@ Examples:
     cmd = args.command.lower()
     
     WINDOWS_UNSUPPORTED = ["pmkid", "capture", "deauth", "full", "wps"]
+    MACOS_UNSUPPORTED = ["pmkid", "capture", "deauth", "wps"]
+    
     if IS_WINDOWS and cmd in WINDOWS_UNSUPPORTED:
         log(f"'{cmd}' is not supported on Windows. Use Kali Linux or a Linux VM with a compatible wireless adapter.", "error")
         log("Supported on Windows: recon, scan, detect, crack", "info")
+        return
+    
+    if IS_MACOS and cmd in MACOS_UNSUPPORTED:
+        log(f"'{cmd}' is not supported on macOS. Use Kali Linux or a Linux VM with a compatible wireless adapter.", "error")
+        log("Supported on macOS: recon, scan, detect, crack", "info")
         return
     
     if cmd == "recon":
         log("PHASE 1: Saved WiFi Password Recovery", "info")
         if IS_WINDOWS:
             recon_windows()
+        elif IS_MACOS:
+            recon_macos()
         else:
             recon_linux()
     
@@ -1176,6 +1258,8 @@ Examples:
         
         if IS_WINDOWS:
             recon_windows()
+        elif IS_MACOS:
+            recon_macos()
         else:
             recon_linux()
         

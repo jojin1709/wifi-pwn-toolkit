@@ -83,12 +83,27 @@ python wifi-pwn.py <command> [options]
 
 ```powershell
 # Open PowerShell as Administrator, then:
+# Note: Use 'python' not 'python3' on Windows
 python wifi-pwn.py --no-admin detect
 python wifi-pwn.py --no-admin recon
 python wifi-pwn.py --no-admin scan
+# Or skip --no-admin if running as Administrator:
+python wifi-pwn.py detect
 ```
 
-**Windows limitations:** Only `recon`, `scan`, and `detect` are natively supported. For PMKID and handshake capture, use Kali Linux or a Linux VM with a compatible wireless adapter.
+**Windows limitations:** Only `recon`, `scan`, and `detect` are natively supported. For PMKID and handshake capture, use WSL2 (see below) or Kali Linux.
+
+### WSL2 Setup (for Windows users)
+
+For full functionality on Windows, install WSL2 with Kali Linux:
+
+```powershell
+# In PowerShell as Administrator:
+wsl --install -d kali-linux
+# Then inside WSL:
+sudo apt update && sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3 iw ethtool
+sudo python3 wifi-pwn.py detect
+```
 
 ---
 
