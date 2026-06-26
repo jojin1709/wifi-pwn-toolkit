@@ -433,7 +433,7 @@ def crack_hashcat(hash_file, wordlist=None, mask=None, rules=None, timeout=300):
     
     if not wordlist:
         candidates = [
-            str(SCRIPT_DIR / "wordlists" / "common-wifi-passwords.txt"),
+            str(SCRIPT_DIR / "wordlists" / "rockyou.txt"),
             "/usr/share/wordlists/rockyou.txt",
             "/usr/share/wordlists/rockyou.txt.gz",
             "/usr/share/wordlists/realhuman_phill.txt"
