@@ -23,7 +23,7 @@ A comprehensive WiFi security assessment toolkit designed to extract saved WiFi 
 | Password Cracking         | Crack captured hashes with hashcat + wordlists/masks |
 | Auto Scan                 | Scan nearby WiFi networks                            |
 | Capability Detection      | Check what your internal WiFi adapter supports       |
-| Full Auto Mode            | One-command end-to-end: recon → capture → crack      |
+| Full Auto Mode | One-command end-to-end: recon → capture → crack | LINUX-ONLY |
 
 ---
 

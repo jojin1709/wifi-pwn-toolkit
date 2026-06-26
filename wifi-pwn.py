@@ -764,21 +764,33 @@ def send_deauth(bssid, client_mac=None, count=5, iface=None):
 
 # ─── PHASE 5b: WPS Attack ───
 
-def scan_wps():
+def try_monitor_mode_wps(iface):
+    code, out, err = run_cmd(["sudo", "airmon-ng", "start", iface], timeout=10)
+    if "monitor mode enabled" in out.lower() or f"{iface}mon" in out:
+        return f"{iface}mon"
+    return iface
+
+def scan_wps(iface=None):
     if not check_tool("wash"):
         log("wash not found. Install: sudo apt install reaver", "error")
         return None
     
-    code, out, err = run_cmd(["iw", "dev"])
-    ifaces = re.findall(r'Interface\s+(\w+)', out) if code == 0 else []
-    if not ifaces:
-        log("No wireless interfaces found.", "error")
-        return None
+    if not iface:
+        code, out, err = run_cmd(["iw", "dev"])
+        ifaces = re.findall(r'Interface\s+(\w+)', out) if code == 0 else []
+        if not ifaces:
+            log("No wireless interfaces found.", "error")
+            return None
+        iface = ifaces[0]
     
-    iface = ifaces[0]
     log("Scanning for WPS-enabled networks...", "info")
     log(f"Using interface: {iface}", "info")
-    code, out, err = run_cmd(["sudo", "wash", "-i", iface], timeout=15)
+    
+    mon_iface = try_monitor_mode_wps(iface)
+    if mon_iface != iface:
+        log(f"Monitor mode enabled on {mon_iface}", "ok")
+    
+    code, out, err = run_cmd(["sudo", "wash", "-i", mon_iface], timeout=15)
     
     if code != 0:
         log("WPS scan failed. Ensure monitor mode is enabled.", "error")
@@ -963,6 +975,37 @@ def scan_networks(iface=None, json_output=False):
                         auth = net.get("auth", "?")
                         print(f"  {ssid:30} {bssid:20} {ch:5} {sig:8} {auth:20}")
             return networks
+        return None
+    
+    if IS_MACOS:
+        log("Scanning networks on macOS...", "info")
+        airport_path = "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+        if Path(airport_path).exists():
+            code, out, err = run_cmd([airport_path, "-s"], timeout=15)
+            if code == 0:
+                networks = []
+                lines = out.splitlines()
+                if lines:
+                    for line in lines[1:]:
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            ssid = parts[0] if len(parts) > 0 else "[Hidden]"
+                            bssid = parts[2].lower() if len(parts) > 2 else "?"
+                            ch = parts[3] if len(parts) > 3 else "?"
+                            signal = parts[1] if len(parts) > 1 else "?"
+                            networks.append({"ssid": ssid, "bssid": bssid, "channel": ch, "signal": signal, "auth": "Unknown"})
+                
+                if json_output:
+                    print(json.dumps({"platform": "macos", "networks": networks}, indent=2))
+                else:
+                    print(f"\n{B}{'SSID':30} {'BSSID':20} {'CH':5} {'Signal':8}{N}")
+                    print("-" * 70)
+                    for net in networks:
+                        print(f"  {net['ssid']:30} {net['bssid']:20} {net['channel']:5} {net['signal']:8}")
+                return networks
+            log("airport command not found or failed.", "error")
+            return None
+        log("airport command not found. Install: brew install --cask wireless-internet", "error")
         return None
     
     if not iface:
