@@ -387,15 +387,15 @@ If this tool helped you, consider giving it a ⭐ on GitHub!
 
 **JOJIN JOHN**
 
-<a href="https://www.linkedin.com/in/jojin-john/">
-  <img src="https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin" alt="LinkedIn" />
-</a>
+<p align="left">
+  <a href="https://www.linkedin.com/in/jojin-john/">
+    <img src="https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin" alt="LinkedIn">
+  </a>
 
-<a href="https://www.buymeacoffee.com/jojin1709" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.buymeacoffee.com/button-api/?text=Support%20my%20work&emoji=🚀&slug=jojin1709&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Support my work">
-</a>
-
-<script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="jojin1709" data-description="Support me on Buy me a coffee!" data-message="" data-color="#5F7FFF" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
+  <a href="https://www.buymeacoffee.com/jojin1709">
+    <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support-yellow?style=for-the-badge&logo=buymeacoffee" alt="Buy Me A Coffee">
+  </a>
+</p>
 
 ---
 
