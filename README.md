@@ -62,19 +62,51 @@ python3 wifi-pwn.py detect
 
 ```bash
 # Basic usage
-python3 wifi-pwn.py <command> [options]
-
-# Always run as root on Linux
-sudo python3 wifi-pwn.py <command>
+python wifi-pwn.py <command> [options]
 ```
 
-> **Note:** On Linux, if required tools are missing, the script will ask if you want to install them automatically via `apt`.
+> **Platform-specific notes:**
+> - **Windows:** Run as Administrator. Use `python` instead of `python3`.
+> - **Kali Linux:** Always run with `sudo`. Use `python3`.
+> - **Windows:** If Unicode/encoding issues occur, ensure your terminal uses UTF-8 (`chcp 65001`).
+> - **Linux:** If required tools are missing, the script will ask if you want to install them automatically via `apt`.
+
+---
+
+## Running on Windows
+
+```powershell
+# Open PowerShell as Administrator, then:
+python wifi-pwn.py --no-admin detect
+python wifi-pwn.py --no-admin recon
+python wifi-pwn.py --no-admin scan
+```
+
+**Windows limitations:** Only `recon`, `scan`, and `detect` are natively supported. For PMKID and handshake capture, use Kali Linux or a Linux VM with a compatible wireless adapter.
+
+---
+
+## Running on Kali Linux
+
+```bash
+# Install dependencies first (or let the tool auto-prompt)
+sudo apt update
+sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3 iw ethtool
+
+# Run any command with sudo
+sudo python3 wifi-pwn.py detect
+sudo python3 wifi-pwn.py recon
+sudo python3 wifi-pwn.py scan
+sudo python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
+sudo python3 wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6
+sudo python3 wifi-pwn.py crack --input hash.22000
+```
 
 ---
 
 ## Bundled Wordlist
 
-The toolkit includes a built-in wordlist at `wordlists/common-wifi-passwords.txt` with the most common WiFi passwords. No download needed — it works out of the box. For larger wordlists, use `--wordlist /usr/share/wordlists/rockyou.txt`.
+The toolkit includes **rockyou.txt** (14M+ real-world passwords, ~133 MB) in `wordlists/rockyou.txt`. No download needed — it works out of the box. For additional wordlists, use `--wordlist /path/to/wordlist.txt`.
 
 ### Commands
 
@@ -194,25 +226,29 @@ python3 wifi-pwn.py detect
 
 ## Workflow Examples
 
-### Example 1: Quick WiFi Password Extraction
-```bash
-# Extract all saved passwords from this machine
-sudo python3 wifi-pwn.py recon
+### Windows Example: Quick WiFi Password Extraction
+```powershell
+# Open PowerShell as Administrator
+python wifi-pwn.py --no-admin recon
+python wifi-pwn.py --no-admin scan
 ```
 
-### Example 2: Capture and Crack a Target Network
+### Kali Linux Example: PMKID Capture and Crack
 ```bash
-# Step 1: Scan for networks
+# Step 1: Install everything (or let it auto-prompt)
+sudo apt update && sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat
+
+# Step 2: Scan for networks
 sudo python3 wifi-pwn.py scan
 
-# Step 2: Capture PMKID (works on most internal cards)
+# Step 3: Capture PMKID (works on most internal/adapters)
 sudo python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
 
-# Step 3: Crack the hash (uses bundled wordlist by default)
+# Step 4: Crack the hash (uses bundled rockyou.txt by default)
 sudo python3 wifi-pwn.py crack --input wifi-pwn-output/pmkid-*.22000
 ```
 
-### Example 3: Full Automated Attack
+### Example 3: Full Automated Attack (Kali Linux)
 ```bash
 # One command to do everything (uses bundled wordlist)
 sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120
@@ -221,6 +257,10 @@ sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120
 ### Example 4: Check Adapter Capabilities
 ```bash
 # See what your card can do before attempting attacks
+# Windows:
+python wifi-pwn.py --no-admin detect
+
+# Kali Linux:
 sudo python3 wifi-pwn.py detect
 ```
 
@@ -254,7 +294,7 @@ wifi-pwn-output/
 └── handshake-HHMMSS.22000
 
 wordlists/
-└── common-wifi-passwords.txt # Bundled wordlist (ready to use)
+└── rockyou.txt # Bundled wordlist (14M+ passwords, 133 MB)
 ```
 
 ---
@@ -276,7 +316,7 @@ The author is not responsible for any misuse or damage caused by this software. 
 | "No wireless interfaces found" | Check `iw dev` — your adapter may need drivers |
 | "Monitor mode failed" | Try PMKID capture instead (`pmkid` command) |
 | "Tools not found" | The script will auto-prompt to install missing tools on Linux |
-| "No wordlist found" | Bundled wordlist included at `wordlists/common-wifi-passwords.txt` |
+| "No wordlist found" | Bundled wordlist included at `wordlists/rockyou.txt` |
 | "PMKID not captured" | Try longer timeout, check if AP supports PMKID, move closer to AP |
 | "Permission denied" | Run with `sudo` on Linux or as Administrator on Windows |
 

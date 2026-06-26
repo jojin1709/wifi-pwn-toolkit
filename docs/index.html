@@ -254,6 +254,42 @@ sudo python3 wifi-pwn.py detect
 # Windows
 python wifi-pwn.py --no-admin detect</code></pre>
 
+  <h2 id="usage">Usage</h2>
+  <p>Basic command syntax:</p>
+  <pre><code>python wifi-pwn.py <span class="arg">&lt;command&gt;</span> <span class="opt">[options]</span></code></pre>
+
+  <div class="card">
+    <h4>Platform Notes</h4>
+    <ul>
+      <li><strong>Windows:</strong> Run as Administrator. Use <code>python</code> instead of <code>python3</code>.</li>
+      <li><strong>Kali Linux:</strong> Always run with <code>sudo</code>. Use <code>python3</code>.</li>
+      <li><strong>Windows:</strong> If Unicode/encoding issues occur, ensure your terminal uses UTF-8: <code>chcp 65001</code>.</li>
+      <li><strong>Linux:</strong> If required tools are missing, the tool will prompt to auto-install them via <code>apt</code>.</li>
+    </ul>
+  </div>
+
+  <h3>Running on Windows</h3>
+  <pre><code><span class="cmd"># Open PowerShell as Administrator, then:</span>
+python wifi-pwn.py --no-admin detect
+python wifi-pwn.py --no-admin recon
+python wifi-pwn.py --no-admin scan</code></pre>
+  <div class="warn-box">
+    <strong>Windows Limitation:</strong> Only <code>recon</code>, <code>scan</code>, and <code>detect</code> are natively supported on Windows. For PMKID and handshake capture, use <strong>Kali Linux</strong> or a Linux VM with a compatible wireless adapter.
+  </div>
+
+  <h3>Running on Kali Linux</h3>
+  <pre><code><span class="cmd"># Install dependencies (or let the tool auto-prompt)</span>
+sudo apt update
+sudo apt install -y aircrack-ng hcxdumptool hcxtools hashcat python3 iw ethtool
+
+<span class="cmd"># Run any command with sudo</span>
+sudo python3 wifi-pwn.py detect
+sudo python3 wifi-pwn.py recon
+sudo python3 wifi-pwn.py scan
+sudo python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
+sudo python3 wifi-pwn.py capture --bssid AA:BB:CC:DD:EE:FF --channel 6
+sudo python3 wifi-pwn.py crack --input hash.22000</code></pre>
+
   <h2 id="quick-start">Quick Start</h2>
 
   <h3>1. Check Adapter Capabilities</h3>
