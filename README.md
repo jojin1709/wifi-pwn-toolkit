@@ -68,6 +68,14 @@ python3 wifi-pwn.py <command> [options]
 sudo python3 wifi-pwn.py <command>
 ```
 
+> **Note:** On Linux, if required tools are missing, the script will ask if you want to install them automatically via `apt`.
+
+---
+
+## Bundled Wordlist
+
+The toolkit includes a built-in wordlist at `wordlists/common-wifi-passwords.txt` with the most common WiFi passwords. No download needed — it works out of the box. For larger wordlists, use `--wordlist /usr/share/wordlists/rockyou.txt`.
+
 ### Commands
 
 #### 1. Recon — Extract Saved WiFi Passwords
@@ -200,14 +208,14 @@ sudo python3 wifi-pwn.py scan
 # Step 2: Capture PMKID (works on most internal cards)
 sudo python3 wifi-pwn.py pmkid --bssid AA:BB:CC:DD:EE:FF --timeout 120
 
-# Step 3: Crack the hash
-sudo python3 wifi-pwn.py crack --input wifi-pwn-output/pmkid-*.22000 --wordlist /usr/share/wordlists/rockyou.txt
+# Step 3: Crack the hash (uses bundled wordlist by default)
+sudo python3 wifi-pwn.py crack --input wifi-pwn-output/pmkid-*.22000
 ```
 
 ### Example 3: Full Automated Attack
 ```bash
-# One command to do everything
-sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --wordlist rockyou.txt --timeout 120
+# One command to do everything (uses bundled wordlist)
+sudo python3 wifi-pwn.py full --bssid AA:BB:CC:DD:EE:FF --timeout 120
 ```
 
 ### Example 4: Check Adapter Capabilities
@@ -244,6 +252,9 @@ wifi-pwn-output/
 ├── pmkid-capture-HHMMSS.essid
 ├── handshake-HHMMSS.cap
 └── handshake-HHMMSS.22000
+
+wordlists/
+└── common-wifi-passwords.txt # Bundled wordlist (ready to use)
 ```
 
 ---
@@ -264,9 +275,8 @@ The author is not responsible for any misuse or damage caused by this software. 
 |---|---|
 | "No wireless interfaces found" | Check `iw dev` — your adapter may need drivers |
 | "Monitor mode failed" | Try PMKID capture instead (`pmkid` command) |
-| "hcxdumptool not found" | `sudo apt install hcxdumptool` |
-| "hashcat not found" | `sudo apt install hashcat` |
-| "No wordlist found" | Download rockyou.txt or use your own with `--wordlist` |
+| "Tools not found" | The script will auto-prompt to install missing tools on Linux |
+| "No wordlist found" | Bundled wordlist included at `wordlists/common-wifi-passwords.txt` |
 | "PMKID not captured" | Try longer timeout, check if AP supports PMKID, move closer to AP |
 | "Permission denied" | Run with `sudo` on Linux or as Administrator on Windows |
 
